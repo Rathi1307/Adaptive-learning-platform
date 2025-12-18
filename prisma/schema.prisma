@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("STUDENT") // STUDENT, TEACHER
+  standard  String?
+  skillLevel String? // BEGINNER, INTERMEDIATE, ADVANCED
+  
+  clusterId String?
+  cluster   Cluster? @relation(fields: [clusterId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  progress  Progress[]
+  quizResults QuizResult[]
+}
+
+model Cluster {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  students    User[]
+  
+  // Storing schedule/checklist as JSON for flexibility or could be separate models
+  schedule    String? // JSON string: { time, topic, duration }
+  checklist   String? // JSON string: items[]
+  
+  teacherId   String?
+  // teacher     User?   @relation("TeacherClusters", fields: [teacherId], references: [id]) // Optional: if we want to assign clusters to teachers
+}
+
+model Course {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  standard    String?
+  modules     Module[]
+}
+
+model Module {
+  id       String    @id @default(cuid())
+  title    String
+  courseId String
+  course   Course    @relation(fields: [courseId], references: [id])
+  chapters Chapter[]
+}
+
+model Chapter {
+  id          String    @id @default(cuid())
+  title       String
+  content     String?
+  moduleId    String
+  module      Module    @relation(fields: [moduleId], references: [id])
+  
+  difficulty   String? // Easy, Medium, Hard
+  youtubeLink  String?
+  subtopics    String? // JSON string
+  
+  quizzes     Quiz[]
+  progress    Progress[]
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  chapterId String
+  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  status    String   @default("PENDING") // PENDING, COMPLETED, REVISE
+  completedAt DateTime?
+  @@unique([userId, chapterId])
+}
+
+model Quiz {
+  id        String   @id @default(cuid())
+  chapterId String
+  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  questions String   // JSON string or relation to Question model
+  results   QuizResult[]
+}
+
+model QuizResult {
+  id        String   @id @default(cuid())
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  score     Int
+  report    String?
+  createdAt DateTime @default(now())
+}
