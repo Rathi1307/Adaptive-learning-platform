@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/.build/
 
 # production
 /build
@@ -32,9 +33,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env.*.local
 
 # vercel
 .vercel
+.now/
 
 # typescript
 *.tsbuildinfo
@@ -44,3 +48,23 @@ next-env.d.ts
 
 # sqlite
 *.db
+
+# Node
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+
+# Logs
+logs
+*.log
+
+# OS
+*.swp
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

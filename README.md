@@ -34,3 +34,33 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Push this project to GitHub (one-line)
+
+I included a small helper script to create a GitHub repo under your account and push the current project.
+
+Usage (preferred — GitHub CLI):
+1. Install and authenticate the GitHub CLI:
+   - gh auth login
+
+2. From the project root run:
+   ```bash
+   chmod +x ./scripts/create-and-push.sh
+   ./scripts/create-and-push.sh [repo-name] [github-username] [public|private]
+   ```
+   Example:
+   ```bash
+   ./scripts/create-and-push.sh adaptive-learning-platform Rathi1307 public
+   ```
+
+Fallback (without gh):
+1. Export a token with repo scope:
+   ```bash
+   export GITHUB_TOKEN=ghp_yourtokenhere
+   ```
+2. Then run the same script; it will create the repo via the REST API and push.
+
+Notes
+- The script will initialize git if needed, create an initial commit, create the remote repository and push to main.
+- If the repo already exists it will try to push to the existing remote.
+- If you need help with errors, paste the command output and I'll help debug.

@@ -18,7 +18,11 @@ export async function GET(req: Request) {
 
     const courses = await prisma.course.findMany({
         include: {
-            chapters: true,
+            modules: {
+                include: {
+                    chapters: true,
+                },
+            },
         },
     });
 

@@ -18,7 +18,7 @@ export default async function TeacherDashboard() {
     // Attempt to fetch data for the logged in user, or fallback if using a different seeded account
     let dashboardData;
     try {
-        dashboardData = await getTeacherDashboardData(session.user.email || 'teacher@demo.com');
+        dashboardData = await getTeacherDashboardData(session.user.email || 'teacher@school.com');
     } catch (error) {
         // Fallback or empty state
         console.error("Failed to fetch dashboard data:", error);

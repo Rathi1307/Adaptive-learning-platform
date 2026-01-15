@@ -312,7 +312,7 @@ export const mockClassPerformance = [
 export const mockClusters = [
     {
         id: "c1",
-        name: "Cluster A (1-3)",
+        name: "Seed",
         description: "Focus on advanced concepts for top performers.",
         studentIds: ["1", "3"],
         color: "from-violet-500 to-purple-500",
@@ -334,7 +334,7 @@ export const mockClusters = [
     },
     {
         id: "c2",
-        name: "Cluster B (4-6)",
+        name: "Sapling",
         description: "Reinforcement of core concepts and practice.",
         studentIds: ["2", "4", "5", "6"],
         color: "from-pink-500 to-rose-500",
@@ -356,7 +356,7 @@ export const mockClusters = [
     },
     {
         id: "c3",
-        name: "Cluster C (7-9)",
+        name: "Plant",
         description: "Foundational building and gap filling.",
         studentIds: ["7", "8", "9"],
         color: "from-orange-500 to-amber-500",
@@ -376,7 +376,7 @@ export const mockClusters = [
     },
     {
         id: "c4",
-        name: "Cluster D (10-12)",
+        name: "Tree",
         description: "Intensive support and personalized attention.",
         studentIds: ["10", "11", "12"],
         color: "from-blue-500 to-cyan-500",

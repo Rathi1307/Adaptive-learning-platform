@@ -1,11 +1,21 @@
+import Groq from "groq-sdk";
+
+export const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY || "YOUR_GROQ_API_KEY",
+});
 
 export async function generateQuizQuestions(topic: string, difficulty: string) {
-    // Simulate AI delay
+    // Keep existing mock for now to avoid breaking the quiz flow if API key isn't set yet
+    // or if we want to focus strictly on the chat task first. 
+    // ... (Keeping the mock is safer for this specific step unless specifically asked to replace it)
+    // Actually, let's just update the imports and exports, and leave the mock implementation 
+    // but maybe comment that it could be replaced.
+    // Wait, if I replace the whole file, I need to provide the content.
+
+    // Simulating AI delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     // Mock response matching a JSON schema for questions
-    // structure: { question: string, options: string[], answer: string, explanation: string }
-
     return [
         {
             question: `What is a key concept in ${topic} related to ${difficulty} level?`,

@@ -8,39 +8,98 @@ datasource db {
 }
 
 model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String?
+  password      String
+  role          String       @default("STUDENT")
+  standard      String?
+  skillLevel    String?
+  age           Int?
+  entranceScore Int?
+  clusterId     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  progress      Progress[]
+  quizResults   QuizResult[]
+  submissions   Submission[]
+  offlineMarks  OfflineMark[]
+  cluster       Cluster?     @relation(fields: [clusterId], references: [id])
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Message {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      String   @default("STUDENT") // STUDENT, TEACHER
-  standard  String?
-  skillLevel String? // BEGINNER, INTERMEDIATE, ADVANCED
-  
-  clusterId String?
-  cluster   Cluster? @relation(fields: [clusterId], references: [id])
-  
+  senderId  String
+  receiverId String
+  content   String
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  progress  Progress[]
-  quizResults QuizResult[]
+  attachmentUrl String?
+  attachmentType String?
+  
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model OfflineMark {
+  id          String   @id @default(cuid())
+  studentId   String
+  subject     String
+  score       Float
+  totalMarks  Float
+  testDate    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  
+  student     User     @relation(fields: [studentId], references: [id])
 }
 
 model Cluster {
-  id          String   @id @default(cuid())
-  name        String
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  schedule        String?
+  checklist       String?
+  teacherId       String?
+  homework        Homework[]
+  taughtSubtopics TaughtSubtopic[]
+  students        User[]
+  lessonPlans     LessonPlan[]
+}
+
+model Homework {
+  id          String       @id @default(cuid())
+  title       String
   description String?
-  students    User[]
-  
-  // Storing schedule/checklist as JSON for flexibility or could be separate models
-  schedule    String? // JSON string: { time, topic, duration }
-  checklist   String? // JSON string: items[]
-  
-  teacherId   String?
-  // teacher     User?   @relation("TeacherClusters", fields: [teacherId], references: [id]) // Optional: if we want to assign clusters to teachers
+  clusterId   String
+  dueDate     DateTime?
+  points      Int          @default(10)
+  modelAnswer String?
+  gradingMode String       @default("SUPERVISED")
+  createdAt   DateTime     @default(now())
+  standard    String?
+  cluster     Cluster      @relation(fields: [clusterId], references: [id])
+  submissions Submission[]
+}
+
+model Submission {
+  id         String   @id @default(cuid())
+  homeworkId String
+  studentId  String
+  fileUrl    String
+  ocrText    String?
+  grade      Int?
+  feedback   String?
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  student    User     @relation(fields: [studentId], references: [id])
+  homework   Homework @relation(fields: [homeworkId], references: [id])
 }
 
 model Course {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String?
   standard    String?
@@ -51,51 +110,96 @@ model Module {
   id       String    @id @default(cuid())
   title    String
   courseId String
-  course   Course    @relation(fields: [courseId], references: [id])
   chapters Chapter[]
+  course   Course    @relation(fields: [courseId], references: [id])
 }
 
 model Chapter {
-  id          String    @id @default(cuid())
-  title       String
-  content     String?
-  moduleId    String
-  module      Module    @relation(fields: [moduleId], references: [id])
-  
-  difficulty   String? // Easy, Medium, Hard
-  youtubeLink  String?
-  subtopics    String? // JSON string
-  
-  quizzes     Quiz[]
-  progress    Progress[]
+  id              String           @id @default(cuid())
+  title           String
+  content         String?
+  moduleId        String
+  difficulty      String?
+  youtubeLink     String?
+  subtopics       String?
+  module          Module           @relation(fields: [moduleId], references: [id])
+  progress        Progress[]
+  quizzes         Quiz[]
+  taughtSubtopics TaughtSubtopic[]
+  lessonPlans     LessonPlan[]
+}
+
+model TaughtSubtopic {
+  id        String   @id @default(cuid())
+  clusterId String
+  standard  String
+  chapterId String
+  subtopic  String
+  taughtAt  DateTime @default(now())
+  chapter   Chapter  @relation(fields: [chapterId], references: [id])
+  cluster   Cluster  @relation(fields: [clusterId], references: [id])
+
+  @@unique([clusterId, standard, chapterId, subtopic])
 }
 
 model Progress {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  chapterId String
-  chapter   Chapter  @relation(fields: [chapterId], references: [id])
-  status    String   @default("PENDING") // PENDING, COMPLETED, REVISE
+  id          String    @id @default(cuid())
+  userId      String
+  chapterId   String
+  status      String    @default("PENDING")
   completedAt DateTime?
+  chapter     Chapter   @relation(fields: [chapterId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
   @@unique([userId, chapterId])
 }
 
 model Quiz {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   chapterId String
-  chapter   Chapter  @relation(fields: [chapterId], references: [id])
-  questions String   // JSON string or relation to Question model
+  questions String
+  chapter   Chapter      @relation(fields: [chapterId], references: [id])
   results   QuizResult[]
 }
 
 model QuizResult {
   id        String   @id @default(cuid())
   quizId    String
-  quiz      Quiz     @relation(fields: [quizId], references: [id])
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   score     Int
   report    String?
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+}
+
+model ModelAnswer {
+  id        String   @id @default(cuid())
+  standard  String
+  subject   String
+  unit      String
+  topic     String?
+  fileUrl   String?
+  ocrText   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LessonPlan {
+  id          String   @id @default(cuid())
+  date        DateTime
+  clusterId   String
+  standard    String
+  chapterId   String?
+  topic       String
+  subtopic    String?
+  isCompleted Boolean  @default(false)
+  isManual    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cluster Cluster  @relation(fields: [clusterId], references: [id])
+  chapter Chapter? @relation(fields: [chapterId], references: [id])
+
+  @@unique([date, clusterId, standard, topic])
 }

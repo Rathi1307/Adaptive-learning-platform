@@ -14,13 +14,15 @@ export default async function StudentDashboard() {
     let dashboardData;
     try {
         // Fetch data for the logged in student
-        // Fallback to a seeded student if necessary for demo, but preferred to be strict
         dashboardData = await getStudentDashboardData(session.user.email || '');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to fetch student dashboard data:", error);
-        // If we can't find the student (maybe using a different email than seeded), redirect or error
-        // For demo stability, we might want to fallback to a known seeded student email if development mode
-        // But let's assume login uses valid seeded credentials.
+
+        // If student not found in DB (e.g. after re-seed), redirect to login to force fresh session/signup
+        if (error.message?.includes("STUDENT_NOT_FOUND")) {
+            redirect('/login');
+        }
+
         return <div>Error loading dashboard. Please contact support.</div>;
     }
 
