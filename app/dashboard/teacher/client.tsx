@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,8 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
     const [loadingCurriculum, setLoadingCurriculum] = useState(false);
 
     // Homework Creation State
-    const [isCreatingHomework, setIsCreatingHomework] = useState(false);
+    const [isCreatingHomework, setIsCreatingHomework] = useState(false); // Controls Sheet visibility
+    const [isSubmittingHomework, setIsSubmittingHomework] = useState(false); // Controls submission loading
     const [newHomework, setNewHomework] = useState({
         title: "",
         description: "",
@@ -74,6 +76,7 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
     const [loadingSyllabus, setLoadingSyllabus] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+    const [filterSubject, setFilterSubject] = useState<string>("All");
 
     const fetchRecommendations = async (clusterIdOverride?: string) => {
         const idToFetch = clusterIdOverride || selectedCluster?.id;
@@ -185,7 +188,7 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
         if (!selectedCluster || !newHomework.title || !newHomework.dueDate) return;
 
         try {
-            setIsCreatingHomework(true);
+            setIsSubmittingHomework(true);
             const res = await createHomework(
                 selectedCluster.id,
                 newHomework.title,
@@ -203,6 +206,7 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                 // We'd ideally re-fetch the selected cluster's homework
                 alert("Homework assigned successfully!");
                 setNewHomework({ title: "", description: "", dueDate: "", points: 10 });
+                setIsCreatingHomework(false);
             } else {
                 alert("Failed to create homework");
             }
@@ -210,7 +214,7 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
             console.error("Failed to create homework:", error);
             alert("Error creating homework");
         } finally {
-            setIsCreatingHomework(false);
+            setIsSubmittingHomework(false);
         }
     };
 
@@ -309,51 +313,58 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {initialData.clusters.map((cluster) => (
-                    <div
-                        key={cluster.id}
-                        className="group cursor-pointer relative"
-                        onClick={() => {
-                            setSelectedCluster(cluster);
-                        }}
-                    >
-                        <div className={`absolute inset-0 bg-gradient-to-r ${cluster.color || 'from-blue-500 to-cyan-500'} rounded-3xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10`} />
-                        <Card className="border-0 shadow-sm group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300 bg-white rounded-3xl overflow-hidden h-full">
-                            <div className={`h-2 w-full bg-gradient-to-r ${cluster.color || 'from-blue-500 to-cyan-500'}`} />
-                            <CardHeader className="pb-4">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className={`p-3 rounded-2xl bg-slate-50 group-hover:bg-blue-50 transition-colors`}>
-                                        <FolderOpen className="h-6 w-6 text-slate-400 group-hover:text-blue-600" />
+                {initialData.clusters.map((cluster) => {
+                    const uniqueStandards = Array.from(new Set(cluster.students.map((s: any) => String(s.standard)))).map((s: any) => parseInt(s, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+                    const classRange = uniqueStandards.length > 0
+                        ? `Class ${uniqueStandards[0]}${uniqueStandards.length > 1 ? '-' + uniqueStandards[uniqueStandards.length - 1] : ''}`
+                        : '';
+
+                    return (
+                        <div
+                            key={cluster.id}
+                            className="group cursor-pointer relative"
+                            onClick={() => {
+                                setSelectedCluster(cluster);
+                            }}
+                        >
+                            <div className={`absolute inset-0 bg-gradient-to-r ${cluster.color || 'from-blue-500 to-cyan-500'} rounded-3xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10`} />
+                            <Card className="border-0 shadow-sm group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300 bg-white rounded-3xl overflow-hidden h-full">
+                                <div className={`h-2 w-full bg-gradient-to-r ${cluster.color || 'from-blue-500 to-cyan-500'}`} />
+                                <CardHeader className="pb-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className={`p-3 rounded-2xl bg-slate-50 group-hover:bg-blue-50 transition-colors`}>
+                                            <FolderOpen className="h-6 w-6 text-slate-400 group-hover:text-blue-600" />
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="text-slate-300 hover:text-slate-600">
+                                            <MoreHorizontal className="h-5 w-5" />
+                                        </Button>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="text-slate-300 hover:text-slate-600">
-                                        <MoreHorizontal className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                <CardTitle className="text-xl font-bold text-slate-900">{cluster.name}</CardTitle>
-                                <CardDescription className="line-clamp-2 text-sm pt-1">{cluster.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                        <Users className="h-4 w-4 text-slate-400" />
-                                        <span className="text-xs font-bold text-slate-600">{cluster.students.length} Students</span>
+                                    <CardTitle className="text-xl font-bold text-slate-900">{cluster.name}</CardTitle>
+                                    <CardDescription className="line-clamp-2 text-sm pt-1 font-medium text-slate-500">{classRange}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                            <Users className="h-4 w-4 text-slate-400" />
+                                            <span className="text-xs font-bold text-slate-600">{cluster.students.length} Students</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+                                            <Clock className="h-4 w-4 text-slate-400" />
+                                            <span className="text-xs font-bold text-slate-600">{cluster.schedule?.duration || '60 mins'}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                                        <Clock className="h-4 w-4 text-slate-400" />
-                                        <span className="text-xs font-bold text-slate-600">{cluster.schedule?.duration || '60 mins'}</span>
+                                    <div className="pt-4 border-t border-slate-50">
+                                        <div className="flex justify-between items-center text-xs">
+                                            <span className="font-bold text-slate-400 uppercase tracking-wider">Next Class</span>
+                                            <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">Today, 10:00 AM</span>
+                                        </div>
+                                        <p className="font-bold text-slate-900 mt-1 truncate">{cluster.schedule?.topic || 'General Session'}</p>
                                     </div>
-                                </div>
-                                <div className="pt-4 border-t border-slate-50">
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="font-bold text-slate-400 uppercase tracking-wider">Next Class</span>
-                                        <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">Today, 10:00 AM</span>
-                                    </div>
-                                    <p className="font-bold text-slate-900 mt-1 truncate">{cluster.schedule?.topic || 'General Session'}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                ))}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    );
+                })}
 
                 {/* Add New Cluster Card */}
                 <button className="h-full min-h-[250px] rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-300 group">
@@ -375,8 +386,8 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
 
         return (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                <div className="flex flex-col lg:row justify-between items-start lg:items-end gap-6">
-                    <div className="max-w-xl">
+                <div className="flex flex-col items-center gap-6 text-center">
+                    <div className="max-w-2xl">
                         <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-3">Curriculum</h1>
                         <p className="text-slate-500 text-base font-medium leading-relaxed">Centralized NCERT mapping and progress tracking.</p>
                     </div>
@@ -712,7 +723,14 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                     </div>
                     <div className="text-white text-left">
                         <h1 className="text-4xl font-extrabold tracking-tight">{selectedCluster?.name}</h1>
-                        <p className="text-blue-100/80 text-lg font-medium mt-1 leading-relaxed max-w-lg text-left">{selectedCluster?.description}</p>
+                        <p className="text-blue-100/80 text-lg font-medium mt-1 leading-relaxed max-w-lg text-left">
+                            {(() => {
+                                const uniqueStandards = Array.from(new Set(selectedCluster?.students?.map((s: any) => String(s.standard)))).map((s: any) => parseInt(s, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+                                return uniqueStandards.length > 0
+                                    ? `Class ${uniqueStandards[0]}${uniqueStandards.length > 1 ? '-' + uniqueStandards[uniqueStandards.length - 1] : ''}`
+                                    : '';
+                            })()}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -727,100 +745,139 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
 
                     <TabsContent value="overview" className="focus-visible:outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* What to Teach Next Section - Expanded Full Width */}
-                        <div className="mb-16">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-1">
-                                <div className="flex items-center gap-5">
-                                    <div>
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tight uppercase leading-none mb-1">What to Teach Next</h3>
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-1 w-8 bg-blue-600/30 rounded-full"></div>
-                                            <p className="text-slate-500 text-sm font-bold uppercase tracking-wider">Recommended Sessions</p>
+
+                        {(() => {
+                            // Logic for Subject Filtering
+                            const recommendations = lessonPlan.recommendations || [];
+                            const availableSubjects = Array.from(new Set(recommendations.map((r: any) => r.recommendation?.subject).filter(Boolean))) as string[];
+
+                            // State is managed inside this render scope for now due to complex component structure, 
+                            // but ideally should be at top level. HOWEVER, since we are inside a map or complex block, 
+                            // let's use the parent state if possible. 
+                            // Actually, I'll add the state at the top of the component in a separate Edit, 
+                            // and here I will just use it. 
+                            // Wait, I need to add the state first. 
+                            // Let's pause this replacement and add state at the top first.
+                            // RE-PLANNING: I will utilize the 'filterSubject' state I am ABOUT to add.
+
+                            const filteredRecommendations = filterSubject === "All"
+                                ? recommendations
+                                : recommendations.filter((r: any) => r.recommendation?.subject === filterSubject);
+
+                            return (
+                                <div className="mb-16">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 px-1">
+                                        <div className="flex items-center gap-5">
+                                            <div>
+                                                <h3 className="text-3xl font-black text-slate-900 tracking-tight uppercase leading-none mb-1">What to Teach Next</h3>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-1 w-8 bg-blue-600/30 rounded-full"></div>
+                                                    <p className="text-slate-500 text-sm font-bold uppercase tracking-wider">Recommended Sessions</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Subject Filter Dropdown */}
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filter by:</span>
+                                            <Select value={filterSubject} onValueChange={setFilterSubject}>
+                                                <SelectTrigger className="w-40 h-10 border-slate-200 bg-white rounded-xl shadow-sm font-bold text-xs transition-all text-slate-700">
+                                                    <SelectValue placeholder="All Subjects" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-slate-100 shadow-xl p-1">
+                                                    <SelectItem value="All" className="font-bold rounded-lg text-xs">All Subjects</SelectItem>
+                                                    {availableSubjects.map(sub => (
+                                                        <SelectItem key={sub} value={sub} className="font-bold rounded-lg text-xs">{sub}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
 
 
-                            {(() => {
-                                if (loadingRecommendations) {
-                                    return (
-                                        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-24 flex flex-col items-center justify-center space-y-6">
-                                            <div className="h-14 w-14 animate-spin rounded-full border-4 border-slate-100 border-t-blue-600" />
-                                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest animate-pulse">Analysing performance data...</p>
-                                        </div>
-                                    );
-                                }
-                                if (lessonPlan.recommendations && lessonPlan.recommendations.length > 0) {
-                                    return (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {lessonPlan.recommendations.map((rec: any, idx: number) => {
-                                                const nextRec = rec.recommendation;
-                                                if (!nextRec) return null;
-                                                return (
-                                                    <div key={idx} className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm hover:border-blue-200 transition-all hover:shadow-lg flex flex-col gap-6 group relative overflow-hidden h-full">
-                                                        {/* Left: Standard Only */}
-                                                        <div className="flex items-center gap-4 shrink-0">
-                                                            <span className="bg-slate-50 text-slate-500 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-[0.2em] uppercase border border-slate-100">
-                                                                Class {rec.standard}
-                                                            </span>
-                                                        </div>
 
-                                                        {/* Middle: Content */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <h4 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight text-left truncate">{nextRec.subtopic}</h4>
-                                                            <p className="text-slate-500 text-sm font-medium text-left opacity-80 mt-1 max-w-2xl truncate">{nextRec.chapterTitle || nextRec.chapterId}</p>
-                                                        </div>
+                                    {(() => {
+                                        if (loadingRecommendations) {
+                                            return (
+                                                <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-24 flex flex-col items-center justify-center space-y-6">
+                                                    <div className="h-14 w-14 animate-spin rounded-full border-4 border-slate-100 border-t-blue-600" />
+                                                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest animate-pulse">Analysing performance data...</p>
+                                                </div>
+                                            );
+                                        }
+                                        if (filteredRecommendations && filteredRecommendations.length > 0) {
+                                            return (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                    {filteredRecommendations.map((rec: any, idx: number) => {
+                                                        const nextRec = rec.recommendation;
+                                                        if (!nextRec) return null;
+                                                        return (
+                                                            <div key={idx} className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm hover:border-blue-200 transition-all hover:shadow-lg flex flex-col gap-6 group relative overflow-hidden h-full">
+                                                                {/* Left: Standard Only */}
+                                                                <div className="flex items-center gap-4 shrink-0">
+                                                                    <span className="bg-slate-50 text-slate-500 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-[0.2em] uppercase border border-slate-100">
+                                                                        Class {rec.standard}
+                                                                    </span>
+                                                                </div>
 
-                                                        {/* Right: Action */}
-                                                        <div className="shrink-0 w-full mt-auto">
-                                                            <Dialog>
-                                                                <DialogTrigger asChild>
-                                                                    <Button className="w-full h-12 px-8 bg-slate-900 text-white hover:bg-blue-600 font-bold rounded-xl shadow-lg border-0 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] text-xs uppercase tracking-widest">
-                                                                        <Plus className="h-4 w-4" />
-                                                                        Schedule
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent className="rounded-[40px] p-0 overflow-hidden bg-white max-w-md border-0 shadow-2xl">
-                                                                    <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
-                                                                        <div className="absolute -right-10 -top-10 h-40 w-40 bg-blue-600 opacity-20 blur-3xl rounded-full" />
-                                                                        <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-left relative z-10">Quick Schedule</DialogTitle>
-                                                                        <DialogDescription className="text-slate-400 mt-2 text-left font-medium relative z-10">Ready for Class {rec.standard}</DialogDescription>
-                                                                    </div>
-                                                                    <div className="p-10">
-                                                                        <form action={handleManualSchedule} className="space-y-6">
-                                                                            <div className="space-y-2 text-left">
-                                                                                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2 px-1">Recommendation Meta</Label>
-                                                                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
-                                                                                    <p className="text-slate-900 font-bold text-sm">{nextRec.subtopic}</p>
-                                                                                    <p className="text-slate-400 text-xs mt-1">{nextRec.chapterTitle || nextRec.chapterId}</p>
-                                                                                </div>
-                                                                                <input type="hidden" name="topic" value={nextRec.subtopic} />
-                                                                                <input type="hidden" name="standard" value={rec.standard} />
+                                                                {/* Middle: Content */}
+                                                                <div className="flex-1 min-w-0">
+                                                                    <h4 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight text-left truncate">{nextRec.subtopic}</h4>
+                                                                    <p className="text-slate-500 text-sm font-medium text-left opacity-80 mt-1 max-w-2xl truncate">{nextRec.chapterTitle || nextRec.chapterId}</p>
+                                                                </div>
+
+                                                                {/* Right: Action */}
+                                                                <div className="shrink-0 w-full mt-auto">
+                                                                    <Dialog>
+                                                                        <DialogTrigger asChild>
+                                                                            <Button className="w-full h-12 px-8 bg-slate-900 text-white hover:bg-blue-600 font-bold rounded-xl shadow-lg border-0 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] text-xs uppercase tracking-widest">
+                                                                                <Plus className="h-4 w-4" />
+                                                                                Schedule
+                                                                            </Button>
+                                                                        </DialogTrigger>
+                                                                        <DialogContent className="rounded-[40px] p-0 overflow-hidden bg-white max-w-md border-0 shadow-2xl">
+                                                                            <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
+                                                                                <div className="absolute -right-10 -top-10 h-40 w-40 bg-blue-600 opacity-20 blur-3xl rounded-full" />
+                                                                                <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-left relative z-10">Quick Schedule</DialogTitle>
+                                                                                <DialogDescription className="text-slate-400 mt-2 text-left font-medium relative z-10">Ready for Class {rec.standard}</DialogDescription>
                                                                             </div>
-                                                                            <Button type="submit" className="w-full h-16 rounded-[24px] bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all text-sm">Confirm Lesson</Button>
-                                                                        </form>
-                                                                    </div>
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                }
-                                return (
-                                    <div className="bg-white rounded-[40px] p-20 border border-slate-100 text-center shadow-sm">
-                                        <div className="h-24 w-24 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto mb-8 border border-emerald-100">
-                                            <CheckCircle2 className="h-12 w-12 text-emerald-500" />
-                                        </div>
-                                        <h4 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Cluster Goals Achieved</h4>
-                                        <p className="text-slate-500 font-medium max-w-sm mx-auto">All recommended topics for this cluster have been successfully covered.</p>
-                                    </div>
-                                );
-                            })()}
-                        </div>
+                                                                            <div className="p-10">
+                                                                                <form action={handleManualSchedule} className="space-y-6">
+                                                                                    <div className="space-y-2 text-left">
+                                                                                        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2 px-1">Recommendation Meta</Label>
+                                                                                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
+                                                                                            <p className="text-slate-900 font-bold text-sm">{nextRec.subtopic}</p>
+                                                                                            <p className="text-slate-400 text-xs mt-1">{nextRec.chapterTitle || nextRec.chapterId}</p>
+                                                                                        </div>
+                                                                                        <input type="hidden" name="topic" value={nextRec.subtopic} />
+                                                                                        <input type="hidden" name="standard" value={rec.standard} />
+                                                                                    </div>
+                                                                                    <Button type="submit" className="w-full h-16 rounded-[24px] bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 transition-all text-sm">Confirm Lesson</Button>
+                                                                                </form>
+                                                                            </div>
+                                                                        </DialogContent>
+                                                                    </Dialog>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <div className="bg-white rounded-[40px] p-20 border border-slate-100 text-center shadow-sm">
+                                                <div className="h-24 w-24 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto mb-8 border border-emerald-100">
+                                                    <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+                                                </div>
+                                                <h4 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Cluster Goals Achieved</h4>
+                                                <p className="text-slate-500 font-medium max-w-sm mx-auto">All recommended topics for this cluster have been successfully covered.</p>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            );
+                        })()}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {/* Left Column: Stats */}
@@ -834,48 +891,79 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                                         <p className="text-4xl font-black text-slate-900 leading-none text-left">{selectedCluster?.students?.length || 0}</p>
                                     </div>
                                 </div>
-                                <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-6 group hover:border-green-200 transition-all">
-                                    <div className="h-16 w-16 rounded-[20px] bg-green-50 flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition-all shadow-inner">
-                                        <CheckCircle2 className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <h3 className="uppercase tracking-widest text-[10px] font-bold text-slate-400 mb-0.5 text-left">Cluster Health</h3>
-                                        <p className="text-4xl font-black text-green-600 leading-none text-left">Good</p>
-                                    </div>
-                                </div>
+
                             </div>
 
                             {/* Right Column: Mini Schedule */}
                             <div className="md:col-span-2">
                                 <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm flex flex-col h-full ring-1 ring-slate-100">
-                                    <div className="flex items-center justify-between mb-8">
-                                        <h3 className="text-xl font-bold flex items-center gap-3 text-slate-900">
-                                            <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                                                <Timer className="h-5 w-5 text-slate-600" />
-                                            </div>
-                                            Session Breakdown
-                                        </h3>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Today&apos;s Plan</span>
-                                    </div>
-
-                                    <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
+                                    <div className="flex flex-col gap-4">
                                         {(() => {
                                             try {
-                                                const schedule = selectedCluster?.schedule ? JSON.parse(selectedCluster.schedule) : null;
-                                                const segments = schedule?.segments || [];
+                                                // 1. Identify unique standards in the cluster
+                                                const uniqueStandards = Array.from(new Set(selectedCluster?.students?.map((s: any) => String(s.standard)) || [])).map((s: any) => parseInt(s, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
 
-                                                if (segments.length === 0) {
-                                                    return <div className="flex flex-col items-center justify-center w-full py-8 text-slate-400 italic">No schedule defined.</div>;
+                                                if (uniqueStandards.length === 0) {
+                                                    return <div className="flex flex-col items-center justify-center w-full py-8 text-slate-400 italic">No students assigned.</div>;
                                                 }
 
-                                                return segments.map((seg: any, idx: number) => (
-                                                    <div key={idx} className="flex-shrink-0 w-52 bg-slate-50 border border-slate-100 rounded-[24px] p-6 group hover:bg-slate-900 hover:text-white transition-all hover:shadow-xl hover:shadow-slate-900/10 flex flex-col items-start">
-                                                        <div className="flex items-center justify-between mb-5 w-full">
-                                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-slate-500 leading-none">Segment {idx + 1}</span>
-                                                            <Clock className="h-3.5 w-3.5 text-blue-500" />
+                                                // 2. Generate 30-minute segments for each standard
+                                                // Start from 10:00 AM as per user request
+                                                const baseHour = 10;
+                                                const baseMinute = 0;
+
+                                                const segments = uniqueStandards.map((std, idx) => {
+                                                    // Find recommendation for this standard
+                                                    // Note: lessonPlan.recommendations contains objects like { standard: '9', recommendation: { ... } }
+                                                    const recItem = lessonPlan.recommendations?.find((r: any) => String(r.standard) === String(std));
+                                                    const rec = recItem?.recommendation;
+
+                                                    // Calculate start time
+                                                    const startTotalMinutes = baseHour * 60 + baseMinute + (idx * 30);
+                                                    const startH = Math.floor(startTotalMinutes / 60);
+                                                    const startM = startTotalMinutes % 60;
+                                                    const startAmPm = startH >= 12 ? 'PM' : 'AM';
+                                                    const displayStartH = startH > 12 ? startH - 12 : startH;
+                                                    const formatStart = `${displayStartH}:${startM.toString().padStart(2, '0')} ${startAmPm}`;
+
+                                                    // Calculate end time
+                                                    const endTotalMinutes = startTotalMinutes + 30;
+                                                    const endH = Math.floor(endTotalMinutes / 60);
+                                                    const endM = endTotalMinutes % 60;
+                                                    const endAmPm = endH >= 12 ? 'PM' : 'AM';
+                                                    const displayEndH = endH > 12 ? endH - 12 : endH;
+                                                    const formatEnd = `${displayEndH}:${endM.toString().padStart(2, '0')} ${endAmPm}`;
+
+                                                    const activityName = rec?.subtopic ? `${rec.subtopic}` : "Focus Session";
+
+                                                    return {
+                                                        standard: std,
+                                                        timeRange: `${formatStart} - ${formatEnd}`,
+                                                        duration: "30 mins",
+                                                        activity: activityName
+                                                    };
+                                                });
+
+                                                return segments.map((seg, idx) => (
+                                                    <div key={idx} className="w-full bg-slate-50 border border-slate-100 rounded-[24px] p-6 group hover:bg-slate-900 hover:text-white transition-all hover:shadow-xl hover:shadow-slate-900/10 flex items-center justify-between relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                            <Clock className="h-16 w-16" />
                                                         </div>
-                                                        <h4 className="font-bold text-lg mb-1 uppercase tracking-tight leading-none text-left">Class {seg.standard}</h4>
-                                                        <p className="text-[11px] font-medium opacity-60 uppercase text-left">{seg.duration || "30m"}</p>
+
+                                                        {/* Left: Time & Activity */}
+                                                        <div className="relative z-10 flex flex-col items-start gap-1">
+                                                            <div className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 text-[10px] font-bold group-hover:bg-white/20 group-hover:text-white transition-colors uppercase tracking-wider">
+                                                                {seg.timeRange}
+                                                            </div>
+                                                            <span className="text-xs font-bold text-slate-400 group-hover:text-slate-500 uppercase tracking-widest mt-1">Segment {idx + 1}</span>
+                                                        </div>
+
+                                                        {/* Right: Class Info */}
+                                                        <div className="relative z-10 text-right max-w-[70%]">
+                                                            <h4 className="font-bold text-2xl uppercase tracking-tight leading-none group-hover:text-white truncate">
+                                                                Class {String(seg.standard)} : <span className="text-blue-600 group-hover:text-blue-300">{seg.activity}</span>
+                                                            </h4>
+                                                        </div>
                                                     </div>
                                                 ));
                                             } catch (e) { return null; }
@@ -1011,8 +1099,8 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                                             </div>
                                             <div className="mt-10 flex gap-4">
                                                 <Button variant="outline" className="flex-1 h-12 rounded-xl font-bold border-slate-200" onClick={() => setIsCreatingHomework(false)}>Cancel</Button>
-                                                <Button className="flex-1 h-12 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20" onClick={handleCreateHomework}>
-                                                    {isCreatingHomework ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign Homework"}
+                                                <Button className="flex-1 h-12 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20" onClick={handleCreateHomework} disabled={isSubmittingHomework}>
+                                                    {isSubmittingHomework ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign Homework"}
                                                 </Button>
                                             </div>
                                         </div>
@@ -1079,12 +1167,12 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
             {/* Sidebar */}
             <aside className="w-80 bg-[#0F172A] p-6 flex flex-col shadow-2xl z-20">
                 <div className="flex items-center gap-3 px-2 mb-12">
-                    <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/40">
-                        <BrainCircuit className="h-6 w-6 text-white" />
+                    <div className="h-10 w-10 relative flex items-center justify-center">
+                        <Image src="/logo-edusarthi.svg" alt="EduSarthi Logo" width={40} height={40} className="object-contain" />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold text-white tracking-tight leading-none">InsightHub</h1>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Teacher Dashboard</p>
+                        <h1 className="text-lg font-bold text-white tracking-tight leading-none">Teacher&apos;s Dashboard</h1>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Adaptive Learning</p>
                     </div>
                 </div>
 
@@ -1355,8 +1443,8 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold text-slate-900">{mark.score}/{mark.totalMarks}</span>
                                                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${(mark.score / mark.totalMarks) >= 0.7 ? 'bg-green-100 text-green-700' :
-                                                            (mark.score / mark.totalMarks) >= 0.4 ? 'bg-yellow-100 text-yellow-700' :
-                                                                'bg-red-100 text-red-700'
+                                                        (mark.score / mark.totalMarks) >= 0.4 ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-red-100 text-red-700'
                                                         }`}>
                                                         {Math.round((mark.score / mark.totalMarks) * 100)}%
                                                     </span>

@@ -258,6 +258,7 @@ export async function getTeacherDashboardData(teacherEmail: string) {
                     id: true,
                     name: true,
                     email: true,
+                    standard: true,
                     progress: true,
                     skillLevel: true,
                     role: true,
@@ -755,54 +756,39 @@ export async function getClusterTeachingRecommendations(clusterId: string) {
 
         let nextTopic = null;
 
-        outerLoop:
+        // Create a set of keys for taught subtopics specifically for this loop to avoid repeated DB checks if optimized, 
+        // but here we already have `taughtKeys`.
+
         for (const course of courses) {
             for (const mod of course.modules) {
+                // Find the first untaught topic for THIS module (Subject)
+                let moduleNextTopic = null;
+
                 for (const chapter of mod.chapters) {
                     const subtopics = JSON.parse(chapter.subtopics || "[]");
                     for (const sub of subtopics) {
                         if (!taughtKeys.has(`${chapter.id}:${sub}`)) {
-                            nextTopic = {
+                            moduleNextTopic = {
                                 standard: std,
-                                subject: course.title,
+                                subject: mod.title,
                                 chapterId: chapter.id,
                                 chapterTitle: chapter.title,
                                 subtopic: sub
                             };
-                            break outerLoop;
+                            break; // Found the next topic for this module, break subtopic loop
                         }
                     }
+                    if (moduleNextTopic) break; // Break chapter loop
                 }
-            }
-        }
 
-        // FALLBACK: If no topic found in DB, provide sample data
-        if (!nextTopic) {
-            const sampleSyllabus = [
-                { id: 'S1', title: 'Intro to Concept', subtopic: 'Basic Fundamentals' },
-                { id: 'S2', title: 'Advanced Theory', subtopic: 'Practical Applications' },
-                { id: 'S3', title: 'Deep Dive', subtopic: 'Problem Solving' },
-                { id: 'S4', title: 'Final Review', subtopic: 'Exam Preparation' }
-            ];
-
-            for (const sample of sampleSyllabus) {
-                if (!taughtKeys.has(`SAMPLE:${sample.subtopic}`)) {
-                    nextTopic = {
+                if (moduleNextTopic) {
+                    recommendations.push({
                         standard: std,
-                        subject: "General Subject",
-                        chapterId: "SAMPLE",
-                        chapterTitle: sample.title,
-                        subtopic: sample.subtopic
-                    };
-                    break;
+                        recommendation: moduleNextTopic
+                    });
                 }
             }
         }
-
-        recommendations.push({
-            standard: std,
-            recommendation: nextTopic
-        });
     }
 
     return recommendations;

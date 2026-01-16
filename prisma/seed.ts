@@ -798,40 +798,43 @@ async function main() {
         }
     });
 
-    // Update Rahul to be in "Sapling" for demo
-    const sapling = await prisma.cluster.findFirst({ where: { name: "Sapling" } });
-    if (sapling) {
+    // Update Rahul to be in "Tree" for demo (Class 10)
+    const tree = await prisma.cluster.findFirst({ where: { name: "Tree" } });
+    if (tree) {
         await prisma.user.update({
             where: { email: "student@school.com" },
-            data: { clusterId: sapling.id }
+            data: { clusterId: tree.id }
         });
 
         // Add Sample Homework for Sapling (Classes 4, 5, 6)
-        await prisma.homework.createMany({
-            data: [
-                {
-                    clusterId: sapling.id,
-                    title: "Plant Life Cycle Quiz",
-                    description: "Diagram the life cycle of a flowering plant and explain each stage.",
-                    standard: "4",
-                    points: 10,
-                    gradingMode: "SUPERVISED",
-                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                },
-                {
-                    clusterId: sapling.id,
-                    title: "Human Digestion Summary",
-                    description: "Write a short summary of how the human digestive system works.",
-                    standard: "5",
-                    points: 15,
-                    gradingMode: "AUTONOMOUS",
-                    dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-                }
-            ]
-        });
-    }
+        const sapling = await prisma.cluster.findFirst({ where: { name: "Sapling" } });
+        if (sapling) {
+            await prisma.homework.createMany({
+                data: [
+                    {
+                        clusterId: sapling.id,
+                        title: "Plant Life Cycle Quiz",
+                        description: "Diagram the life cycle of a flowering plant and explain each stage.",
+                        standard: "4",
+                        points: 10,
+                        gradingMode: "SUPERVISED",
+                        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                    },
+                    {
+                        clusterId: sapling.id,
+                        title: "Human Digestion Summary",
+                        description: "Write a short summary of how the human digestive system works.",
+                        standard: "5",
+                        points: 15,
+                        gradingMode: "AUTONOMOUS",
+                        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+                    }
+                ]
+            });
+        }
 
-    console.log("Seeding completed.");
+        console.log("Seeding completed.");
+    }
 }
 
 main()

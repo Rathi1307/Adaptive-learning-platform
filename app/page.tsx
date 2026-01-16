@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BrainCircuit, Users, BarChart3, Sparkles, Heart, Quote, GraduationCap } from "lucide-react";
 
@@ -6,25 +7,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 overflow-hidden font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Navbar */}
-      <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+      <nav className="fixed w-full z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-2xl tracking-tight text-slate-900">
-            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm">
-              <Sparkles className="h-4 w-4" />
+          <div className="flex items-center gap-2 font-bold text-2xl tracking-tight text-white">
+            <div className="h-8 w-8 relative flex items-center justify-center">
+              <Image src="/logo-edusarthi.svg" alt="EduSarthi Logo" width={32} height={32} className="object-contain" />
             </div>
             <span>
-              Adaptive<span className="font-light text-slate-500">Learn</span>
+              Edu<span className="font-light text-blue-400">Sarthi</span>
             </span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <Link href="#mission" className="hover:text-blue-600 transition-colors">Our Mission</Link>
-            <Link href="#stories" className="hover:text-blue-600 transition-colors">Stories</Link>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+            <Link href="#mission" className="hover:text-white transition-colors">Our Mission</Link>
+
             <div className="flex items-center gap-4">
               <Link href="/login">
-                <Button variant="ghost" className="hover:bg-blue-50 text-slate-600 hover:text-blue-700">Log in</Button>
+                <Button variant="ghost" className="hover:bg-slate-800 text-slate-300 hover:text-white">Log in</Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-slate-900 hover:bg-slate-800 text-white rounded-full px-6 transition-transform hover:scale-105 active:scale-95">
+                <Button className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-900/20">
                   Get Started
                 </Button>
               </Link>
@@ -140,61 +141,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stories / Testimonials */}
-      <section id="stories" className="py-24 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Stories from the Classroom</h2>
-            <div className="h-1 w-20 bg-blue-500 mx-auto rounded-full" />
-          </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                quote: "I used to be scared of Math. Now I realize I just needed to learn it my way.",
-                author: "Priya, Class 9 Student",
-                role: "Student",
-                color: "bg-blue-500"
-              },
-              {
-                quote: "It's like having a teaching assistant for every single child. I can finally focus on mentoring.",
-                author: "Mr. Sharma",
-                role: "Math Teacher",
-                color: "bg-indigo-500"
-              },
-              {
-                quote: "Seeing my son confident about his exams for the first time is the best feeling.",
-                author: "Mrs. Devi",
-                role: "Parent",
-                color: "bg-emerald-500"
-              }
-            ].map((story, i) => (
-              <div key={i} className="bg-slate-800 p-8 rounded-2xl relative">
-                <Quote className="absolute top-8 right-8 text-slate-700 h-8 w-8" />
-                <p className="text-lg text-slate-300 mb-8 italic leading-relaxed">"{story.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-full ${story.color} flex items-center justify-center font-bold text-white text-sm`}>
-                    {story.author[0]}
-                  </div>
-                  <div>
-                    <p className="font-bold text-white">{story.author}</p>
-                    <p className="text-sm text-slate-500">{story.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-20 px-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2 font-bold text-xl text-slate-900">
-            <div className="h-8 w-8 bg-slate-900 rounded-full flex items-center justify-center text-white">
-              <Sparkles className="h-4 w-4" />
+            <div className="h-8 w-8 relative flex items-center justify-center">
+              <Image src="/logo-edusarthi.svg" alt="EduSarthi Logo" width={32} height={32} className="object-contain" />
             </div>
-            <span>AdaptiveLearn</span>
+            <span>EduSarthi</span>
           </div>
 
           <p className="text-slate-500 text-sm">
