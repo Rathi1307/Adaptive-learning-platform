@@ -79,6 +79,7 @@ model Homework {
   gradingMode String       @default("SUPERVISED")
   createdAt   DateTime     @default(now())
   standard    String?
+  attachmentUrl String?
   cluster     Cluster      @relation(fields: [clusterId], references: [id])
   submissions Submission[]
 }

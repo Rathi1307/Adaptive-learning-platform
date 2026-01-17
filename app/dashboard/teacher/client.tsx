@@ -61,7 +61,8 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
         title: "",
         description: "",
         dueDate: "",
-        points: 10
+        points: 10,
+        attachmentUrl: ""
     });
 
     const [isMounted, setIsMounted] = useState(false);
@@ -197,7 +198,9 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                 newHomework.points,
                 "", // No model answer for now
                 "SUPERVISED", // Default mode
-                selectedStandard
+                selectedStandard,
+                undefined, // ocrText
+                newHomework.attachmentUrl // attachmentUrl
             );
 
             if (res.success) {
@@ -205,14 +208,14 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                 // For now, let's close the sheet and reset form.
                 // We'd ideally re-fetch the selected cluster's homework
                 alert("Homework assigned successfully!");
-                setNewHomework({ title: "", description: "", dueDate: "", points: 10 });
+                setNewHomework({ title: "", description: "", dueDate: "", points: 10, attachmentUrl: "" });
                 setIsCreatingHomework(false);
             } else {
-                alert("Failed to create homework");
+                alert(`Failed to create homework: ${res.error || "Unknown error"}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to create homework:", error);
-            alert("Error creating homework");
+            alert(`Error creating homework: ${error.message || error}`);
         } finally {
             setIsSubmittingHomework(false);
         }
@@ -314,10 +317,29 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {initialData.clusters.map((cluster) => {
-                    const uniqueStandards = Array.from(new Set(cluster.students.map((s: any) => String(s.standard)))).map((s: any) => parseInt(s, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+                    // 1. Try to get standards from students
+                    let uniqueStandards = Array.from(new Set(cluster.students.map((s: any) => String(s.standard)))).map((s: any) => parseInt(s, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+
+                    // 2. Fallback: Parse from schedule if no students
+                    if (uniqueStandards.length === 0 && cluster.schedule) {
+                        try {
+                            const sched = typeof cluster.schedule === 'string' ? JSON.parse(cluster.schedule) : cluster.schedule;
+                            if (sched && sched.segments) {
+                                const schedStds = new Set<number>();
+                                sched.segments.forEach((seg: any) => {
+                                    const match = seg.standard?.match(/(\d+)/);
+                                    if (match) schedStds.add(parseInt(match[0], 10));
+                                });
+                                uniqueStandards = Array.from(schedStds).sort((a, b) => a - b);
+                            }
+                        } catch (e) {
+                            // Ignore parse error
+                        }
+                    }
+
                     const classRange = uniqueStandards.length > 0
                         ? `Class ${uniqueStandards[0]}${uniqueStandards.length > 1 ? '-' + uniqueStandards[uniqueStandards.length - 1] : ''}`
-                        : '';
+                        : 'No Classes Assigned';
 
                     return (
                         <div
@@ -1050,7 +1072,7 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                                             Create Homework
                                         </Button>
                                     </SheetTrigger>
-                                    <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto p-0">
+                                    <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-[540px] overflow-y-auto p-0">
                                         <div className="p-8 pb-32">
                                             <SheetHeader className="mb-8">
                                                 <SheetTitle className="text-2xl font-bold text-slate-900">New Assignment</SheetTitle>
@@ -1092,9 +1114,26 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
                                                             type="number"
                                                             className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:ring-blue-500/20"
                                                             value={newHomework.points}
-                                                            onChange={(e) => setNewHomework({ ...newHomework, points: parseInt(e.target.value) })}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value);
+                                                                setNewHomework({ ...newHomework, points: isNaN(val) ? 0 : val });
+                                                            }}
                                                         />
                                                     </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="uppercase text-xs font-bold text-slate-500 tracking-wider">Attachment (Optional)</Label>
+                                                    <Input
+                                                        type="file"
+                                                        className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:ring-blue-500/20 pt-2.5 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                // Mock upload: in real app, upload to S3 here
+                                                                setNewHomework({ ...newHomework, attachmentUrl: `/uploads/${file.name}` });
+                                                            }
+                                                        }}
+                                                    />
                                                 </div>
                                             </div>
                                             <div className="mt-10 flex gap-4">
@@ -1260,12 +1299,12 @@ export default function TeacherDashboardClient({ userData, initialData }: Teache
 
                 <div className="p-10 max-w-[1600px] mx-auto pb-20">
                     {selectedCluster ? (
-                        <ClusterDetailView />
+                        ClusterDetailView()
                     ) : (
                         <>
-                            {activeView === "clusters" && <ClustersView />}
-                            {activeView === "syllabus" && <SyllabusTrackerView />}
-                            {activeView === "performance" && <PerformanceView />}
+                            {activeView === "clusters" && ClustersView()}
+                            {activeView === "syllabus" && SyllabusTrackerView()}
+                            {activeView === "performance" && PerformanceView()}
                             {activeView === "inboxes" && <InboxesView userData={userData} initialData={initialData} />}
                         </>
                     )}
@@ -1514,7 +1553,7 @@ function InboxesView({ userData, initialData }: InboxesViewProps) {
             setLoadingMessages(true);
             fetchChat().finally(() => setLoadingMessages(false));
 
-            const interval = setInterval(fetchChat, 5000);
+            const interval = setInterval(fetchChat, 1000);
             return () => clearInterval(interval);
         }
     }, [activeStudent]);

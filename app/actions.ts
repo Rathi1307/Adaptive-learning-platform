@@ -321,7 +321,8 @@ export async function createHomework(
     modelAnswer: string,
     gradingMode: "SUPERVISED" | "AUTONOMOUS",
     standard?: string,
-    ocrText?: string
+    ocrText?: string,
+    attachmentUrl?: string
 ) {
     try {
         // Append OCR text to model answer if provided
@@ -339,15 +340,16 @@ export async function createHomework(
                 points,
                 modelAnswer: finalModelAnswer,
                 gradingMode,
-                standard
+                standard,
+                attachmentUrl
             }
         })
         revalidatePath('/dashboard/teacher')
         revalidatePath('/dashboard/student')
         return { success: true, homework }
-    } catch (error) {
-        console.error("Failed to create homework:", error)
-        return { success: false, error: "Failed to create homework" }
+    } catch (error: any) {
+        console.error("Failed to create homework (FULL ERROR):", error)
+        return { success: false, error: `Failed to create homework: ${error.message}` }
     }
 }
 

@@ -288,7 +288,7 @@ export default function StudentDashboardClient({ userData, initialData }: Studen
             fetchChat().finally(() => setLoadingMessages(false));
 
             // Poll every 5 seconds
-            const interval = setInterval(fetchChat, 5000);
+            const interval = setInterval(fetchChat, 1000);
             return () => clearInterval(interval);
         }, [teacherId, studentId]);
 
