@@ -48,6 +48,7 @@ next-env.d.ts
 
 # sqlite
 *.db
+!prisma/dev.db
 
 # Node
 node_modules/
