@@ -10,7 +10,7 @@ import { groq } from "@/lib/ai";
 
 export async function performOCR(formData: FormData) {
     // Stubbed response to prevent crash
-    return { success: false, error: "OCR functionality is currently disabled." };
+    return { success: false, error: "OCR functionality is currently disabled.", text: "" };
 }
 
 export async function registerStudent(name: string, email: string, password: string, age: number, entranceScore: number) {

@@ -1,4 +1,4 @@
-import { registerStudent } from "./app/actions.ts"
+import { registerStudent } from "./app/actions"
 
 async function test() {
     console.log("Starting registration test...")

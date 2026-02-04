@@ -8,11 +8,18 @@ export async function GET() {
                 title: "Mathematics",
                 description: "Basic to Advanced Mathematics",
                 standard: "All",
-                chapters: {
+                modules: {
                     create: [
-                        { title: "Algebra Basics", content: "Introduction to Algebra" },
-                        { title: "Geometry", content: "Shapes and Angles" },
-                        { title: "Calculus", content: "Derivatives and Integrals" },
+                        {
+                            title: "Foundations",
+                            chapters: {
+                                create: [
+                                    { title: "Algebra Basics", content: "Introduction to Algebra" },
+                                    { title: "Geometry", content: "Shapes and Angles" },
+                                    { title: "Calculus", content: "Derivatives and Integrals" },
+                                ]
+                            }
+                        }
                     ],
                 },
             },
@@ -23,11 +30,18 @@ export async function GET() {
                 title: "Science",
                 description: "Physics, Chemistry, and Biology",
                 standard: "All",
-                chapters: {
+                modules: {
                     create: [
-                        { title: "Newton's Laws", content: "Physics Basics" },
-                        { title: "Periodic Table", content: "Chemistry Basics" },
-                        { title: "Cell Structure", content: "Biology Basics" },
+                        {
+                            title: "Core Sciences",
+                            chapters: {
+                                create: [
+                                    { title: "Newton's Laws", content: "Physics Basics" },
+                                    { title: "Periodic Table", content: "Chemistry Basics" },
+                                    { title: "Cell Structure", content: "Biology Basics" },
+                                ]
+                            }
+                        }
                     ],
                 },
             },
